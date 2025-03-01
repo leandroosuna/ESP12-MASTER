@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel</h1>
+    <button onclick="updateDDNS()">Update DDNS</button>
+    <button onclick="wakePC()">Wake PC</button>
+    <p><a href="/logout">Logout</a></p>
+
+    <script>
+    async function updateDDNS() {
+        try {
+            const response = await fetch('/ddnsupdate');
+            alert(await response.text());
+        } catch (error) {
+            alert('DDNS update failed');
+        }
+    }
+
+    async function wakePC() {
+        try {
+            const response = await fetch('/wakeonlan');
+            alert(await response.text());
+        } catch (error) {
+            alert('Wake command failed');
+        }
+    }
+    </script>
+</body>
+</html>

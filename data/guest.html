@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Guest Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Guest Panel</h1>
+    <button onclick="guestUpdate()">Submit Guest Update</button>
+    <p><a href="/logout">Logout</a></p>
+
+    <script>
+    async function guestUpdate() {
+        try {
+            const response = await fetch('/guestupdate');
+            alert(await response.text());
+        } catch (error) {
+            alert('Update failed');
+        }
+    }
+    </script>
+</body>
+</html>
