@@ -53,7 +53,8 @@ void Server::init()
     server.on("/guest.html", HTTP_GET, handleGuestRedirect);
     server.on("/ddnsupdate", HTTP_GET, handleDDNSUpdate);
     server.on("/wakeonlan", HTTP_GET, handleWakeOnLAN);
-
+    server.on("/mc", HTTP_GET, handleMc);
+    
     server.onNotFound(handleNotFound);
 
     server.begin();
@@ -158,6 +159,30 @@ void Server::handleData(AsyncWebServerRequest *request)
     }
 
     request->send(200, "text/plain", "Admin data: Sensitive information");
+}
+
+void Server::handleMc(AsyncWebServerRequest *request)
+{
+    ClientSession *session = authenticateRequest(request);
+    if (!session)
+    {
+        request->send(401, "text/plain", "Unauthorized");
+        return;
+    }
+
+    if (session->role != "admin")
+    {
+        request->send(403, "text/plain", "Forbidden");
+        return;
+    }
+
+    String redirectPath = hostname+":25560/";
+    AsyncWebServerResponse *response = request->beginResponse(302);
+    response->addHeader("Location", redirectPath);
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    // response->addHeader("Set-Cookie", "SESSIONID=" + newSession.id + "; Path=/; HttpOnly");
+    request->send(response);
+    
 }
 
 void Server::handleGuestUpdate(AsyncWebServerRequest *request)

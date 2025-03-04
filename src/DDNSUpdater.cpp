@@ -8,23 +8,26 @@ WiFiClientSecure *DDNSUpdater::client2 = nullptr;
 HTTPClient DDNSUpdater::http2;
 unsigned long DDNSUpdater::lastUpdateTime = 0;
 
-void DDNSUpdater::beginUpdate() {
+void DDNSUpdater::beginUpdate(){
+    state = UpdateState::UpdatingIP;
+}
+
+void DDNSUpdater::checkUpdate() {
     if(state == UpdateState::Idle) {
-        state = UpdateState::StartRequest;
-        publicIP = "";
-        lastUpdateTime = millis();
-        Serial.println("ddns update begin");
+        state = UpdateState::UpdatingIP;
     }
 }
-
-bool DDNSUpdater::isUpdating() {
+bool DDNSUpdater::isUpdating(){
     return state != UpdateState::Idle;
 }
-
 void DDNSUpdater::process() {
     switch(state) {
 
-        case UpdateState::StartRequest:
+        case UpdateState::UpdatingIP:{
+
+            String lastIp = RTCM::getLastIp();
+            bool noRTCData = lastIp == "e" || lastIp == "0.0.0.0";
+
             client = new WiFiClientSecure;
             client->setInsecure();
 
@@ -32,19 +35,25 @@ void DDNSUpdater::process() {
                 http.begin(*client, ipifyURL);
                 http.setTimeout(5000);
             }
-            state = UpdateState::GettingIP;
-            break;
-        case UpdateState::GettingIP:{
-            Serial.println("getting IP");
+        
+            String newIp;
             int httpCode = http.GET();
             if(httpCode  == HTTP_CODE_OK) {
-                publicIP = http.getString();
-                Serial.println("public IP: " + publicIP);
-                publicIP.trim();
+                newIp = http.getString();
+                newIp.trim();
                 http.end();
                 client->stop();
-                state = UpdateState::UpdatingDDNS;
-                lastUpdateTime = millis();
+                
+                if(noRTCData || newIp != lastIp) {
+                    publicIP = newIp;
+                    RTCM::saveLastIp(publicIP);
+                    state = UpdateState::UpdatingDDNS;
+                    lastUpdateTime = millis();
+                }
+                else {
+                    state = UpdateState::Idle;
+                }
+                
             }
             else if(millis() - lastUpdateTime > 10000) {
                 http.end();
@@ -56,21 +65,20 @@ void DDNSUpdater::process() {
                 http.end();
                 client->stop();
                 state = UpdateState::Idle;
-                Serial.println("Code"+httpCode);
-                Serial.println("Response: " + http.getString());
+                // Serial.println("Code"+httpCode);
+                // Serial.println("Response: " + http.getString());
             }
             break;
         }
         case UpdateState::UpdatingDDNS: {
             client2 = new WiFiClientSecure;
             client2->setInsecure();
-            Serial.println("updating DDNS");
+            Serial.println("updating DDNS to " + publicIP);
             String url = ddnsServer + ddnsUpdatePath +
                        "?u=" + ddnsUser +
                        "&p=" + ddnsPass +
                        "&hostname=" + hostname +
                        "&myip=" + publicIP;
-            Serial.println("url: " + url);
 
             if(!http2.connected()) {
                 http2.begin(*client2, url);
@@ -90,18 +98,18 @@ void DDNSUpdater::process() {
                 http2.end();
                 state = UpdateState::Idle;
                 client2->stop();
-                Serial.println(
-                    "timeout, Response: " + http2.getString()
-                );
+                // Serial.println(
+                //     "timeout, Response: " + http2.getString()
+                // );
             }
             else
             {
                 http2.end();
                 client2->stop();
                 state = UpdateState::Idle;
-                Serial.println();
-                Serial.println("Code"+String(httpCode));
-                Serial.println("Response: " + http.getString());
+                // Serial.println();
+                // Serial.println("Code"+String(httpCode));
+                // Serial.println("Response: " + http.getString());
             }
             break;
         }
@@ -110,7 +118,13 @@ void DDNSUpdater::process() {
         default:
             if(http.connected()) {
                 http.end();
+                client->stop();
             }
+            if(http2.connected()) {
+                http2.end();
+                client2->stop();
+            }
+            
             break;
     }
 }

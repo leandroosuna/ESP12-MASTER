@@ -33,6 +33,7 @@ private:
     static void handleGuestRedirect(AsyncWebServerRequest *request);
     static void handleDDNSUpdate(AsyncWebServerRequest *request);
     static void handleWakeOnLAN(AsyncWebServerRequest *request);
+    static void handleMc(AsyncWebServerRequest *request);
 
     static ClientSession* authenticateRequest(AsyncWebServerRequest *request);
     static String generateSessionId();

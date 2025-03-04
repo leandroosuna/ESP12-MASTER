@@ -11,6 +11,7 @@
     <h1>Admin Panel</h1>
     <button onclick="updateDDNS()">Update DDNS</button>
     <button onclick="wakePC()">Wake PC</button>
+    <button onclick="MC()">MC</button>
     <p><a href="/logout">Logout</a></p>
 
     <script>
@@ -29,6 +30,14 @@
             alert(await response.text());
         } catch (error) {
             alert('Wake command failed');
+        }
+    }
+    async function MC() {
+        try {
+            const response = await fetch('/mc');
+            alert(await response.text());
+        } catch (error) {
+            alert('MC command failed');
         }
     }
     </script>

@@ -2,11 +2,13 @@
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
 #include "DDNSCredentials.h"
+#include "RTCM.h"
+
 class DDNSUpdater {
 public:
-    enum class UpdateState { Idle, StartRequest, GettingIP, UpdatingDDNS };
+    enum class UpdateState { Idle, UpdatingIP, UpdatingDDNS };
 
-    
+    static void checkUpdate();
     static void beginUpdate();
     static void process();
     static bool isUpdating();
